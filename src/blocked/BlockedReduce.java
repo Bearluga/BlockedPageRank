@@ -1,4 +1,5 @@
 package blocked;
+
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -7,6 +8,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 
+
+import Utils.Counter;
 //Text, IntWritable, Text, IntWritable
 import Utils.Utils;
 
@@ -63,10 +66,6 @@ public class BlockedReduce extends Reducer<IntWritable, Text, IntWritable, Text>
 		 double v = Math.abs(oldPR-newPR)/newPR;
 		 long adder = (long) (v * 1000);
 		 
-		 
-//		 float counter = conf.getFloat("counter", -1);
-//         if(counter==-1){Utils.log("error: read counter value error in reduce");}
-//		 conf.setFloat("counter", (float) (counter+v));
 
 		 context.getCounter(Counter.CT.RESIDUAL_ERROR).increment(adder);
          

@@ -67,11 +67,14 @@ public class BlockedPageRank {
 
 		job1.setJarByClass(BlockedPageRank.class); // not sure
 
+		job1.setMapOutputKeyClass(Text.class);
+		job1.setMapOutputValueClass(Text.class);
 		job1.setOutputKeyClass(IntWritable.class);
 		job1.setOutputValueClass(Text.class);
 
-		job1.setMapperClass(PreProcessMap.class);
-		job1.setReducerClass(PreProcessReduce.class);
+		
+		job1.setMapperClass(PreProcessBlockedMap.class);
+		job1.setReducerClass(PreProcessBlockedReduce.class);
 
 		job1.setInputFormatClass(TextInputFormat.class);
 		job1.setOutputFormatClass(TextOutputFormat.class);
@@ -98,93 +101,93 @@ public class BlockedPageRank {
 		}*/
 
 		/*===END Preprocessing===*/   
-
-		long totalRE = 1;
-		int passes = 0;
-		String inputPath=args[1];//+".combined";
-		String outputPath=args[2];
-		
-		while(totalRE > 0 && passes<5){
-			/* === Page Rank Itr i === */   
-			Utils.log("Starting PageRank Iter" + passes++);
-
-			conf = new Configuration();
-			//comma separate key value in output file.
-			conf.set("mapred.textoutputformat.separator", ","); //Prior to Hadoop 2 (YARN)
-
-			//set a global Integer called N, number of nodes
-			conf.setInt("N", Utils.N); //TODO: give real N
-
-			//make a new mapreduce job called pagerank
-			Job job = new Job(conf, "pagerank");
-
-			job.setJarByClass(PageRank.class);
-
-			job.setOutputKeyClass(IntWritable.class);
-			job.setOutputValueClass(Text.class);
-
-			job.setMapperClass(Map.class);
-			job.setReducerClass(Reduce.class);
-
-			job.setInputFormatClass(TextInputFormat.class);
-			job.setOutputFormatClass(TextOutputFormat.class);
-
-			FileInputFormat.addInputPath(job, new Path(inputPath));
-			FileOutputFormat.setOutputPath(job, new Path(outputPath));
-
-			Utils.log("Waiting for completion of PageRank Iter "+passes);
-			boolean b0 = job.waitForCompletion(true); //blocking
-			
-			// calculate termination condition
-			totalRE = job.getCounters().findCounter(Counter.CT.RESIDUAL_ERROR).getValue();
-			double avgError = (double)totalRE / (double) Utils.NORMALIZER / Utils.N;
-			
-			
-			
-			fsdos.writeUTF("Iteration "+(passes-1)+" avg error " +avgError+"\n");
-			fsdos.flush();
-			Utils.log("*Iteration "+(passes-1)+" avg error " +avgError+"\n");
-			
-//			Iteration 0 avg error 2.332958e+0
-			Utils.log("Current total RE is "+ totalRE);
-			Utils.log("Mapreduce iter "+passes+" completed - "+b0);
-
-			//Try to merge output files
-			/*try {
-				Utils.log("Trying to merge files");
-				Path srcPathx = new Path(outputPath); 
-				Path dstPathx = new Path(outputPath+".combined"); 
-
-				FileSystem hdfs = FileSystem.get(dstPathx.toUri(), conf); 	
-				FileUtil.copyMerge(hdfs, (srcPathx), hdfs, (dstPathx), false, conf, null); 
-				Utils.log("Merged Files. Output: "+dstPathx.toString());
-			} 
-			catch (IOException e) { 		
-				//errror
-				Utils.log("IOException when merging files");
-			}*/
-
-			try{
-				Utils.log("Chaning input and out paths. And renaming output to input");
-				//fill input with last output
-				Utils.log("    current input path is:"+inputPath+" Current output path is :"+outputPath+"");				
-				
-				Path dstPathx = new Path(outputPath+""); 
-				hdfs = FileSystem.get(dstPathx.toUri(), conf);
-				inputPath=inputPath+passes;
-				hdfs.rename(dstPathx, new Path(inputPath));
-				outputPath += passes;
-				
-				Utils.log("    new input path is:"+inputPath+" New output path is :"+outputPath);				
-			}
-			catch(IOException e){
-				Utils.log("Error while swaping input output.");
-				e.printStackTrace();
-			}
-			/* === END Page Rank Itr i === */
-		}
-		fsdos.close();
-		Utils.log("DONE");
+//
+//		long totalRE = 1;
+//		int passes = 0;
+//		String inputPath=args[1];//+".combined";
+//		String outputPath=args[2];
+//		
+//		while(totalRE > 0 && passes<5){
+//			/* === Page Rank Itr i === */   
+//			Utils.log("Starting PageRank Iter" + passes++);
+//
+//			conf = new Configuration();
+//			//comma separate key value in output file.
+//			conf.set("mapred.textoutputformat.separator", ","); //Prior to Hadoop 2 (YARN)
+//
+//			//set a global Integer called N, number of nodes
+//			conf.setInt("N", Utils.N); //TODO: give real N
+//
+//			//make a new mapreduce job called pagerank
+//			Job job = new Job(conf, "pagerank");
+//
+//			job.setJarByClass(PageRank.class);
+//
+//			job.setOutputKeyClass(IntWritable.class);
+//			job.setOutputValueClass(Text.class);
+//
+//			job.setMapperClass(Map.class);
+//			job.setReducerClass(Reduce.class);
+//
+//			job.setInputFormatClass(TextInputFormat.class);
+//			job.setOutputFormatClass(TextOutputFormat.class);
+//
+//			FileInputFormat.addInputPath(job, new Path(inputPath));
+//			FileOutputFormat.setOutputPath(job, new Path(outputPath));
+//
+//			Utils.log("Waiting for completion of PageRank Iter "+passes);
+//			boolean b0 = job.waitForCompletion(true); //blocking
+//			
+//			// calculate termination condition
+//			totalRE = job.getCounters().findCounter(Counter.CT.RESIDUAL_ERROR).getValue();
+//			double avgError = (double)totalRE / (double) Utils.NORMALIZER / Utils.N;
+//			
+//			
+//			
+//			fsdos.writeUTF("Iteration "+(passes-1)+" avg error " +avgError+"\n");
+//			fsdos.flush();
+//			Utils.log("*Iteration "+(passes-1)+" avg error " +avgError+"\n");
+//			
+////			Iteration 0 avg error 2.332958e+0
+//			Utils.log("Current total RE is "+ totalRE);
+//			Utils.log("Mapreduce iter "+passes+" completed - "+b0);
+//
+//			//Try to merge output files
+//			/*try {
+//				Utils.log("Trying to merge files");
+//				Path srcPathx = new Path(outputPath); 
+//				Path dstPathx = new Path(outputPath+".combined"); 
+//
+//				FileSystem hdfs = FileSystem.get(dstPathx.toUri(), conf); 	
+//				FileUtil.copyMerge(hdfs, (srcPathx), hdfs, (dstPathx), false, conf, null); 
+//				Utils.log("Merged Files. Output: "+dstPathx.toString());
+//			} 
+//			catch (IOException e) { 		
+//				//errror
+//				Utils.log("IOException when merging files");
+//			}*/
+//
+//			try{
+//				Utils.log("Chaning input and out paths. And renaming output to input");
+//				//fill input with last output
+//				Utils.log("    current input path is:"+inputPath+" Current output path is :"+outputPath+"");				
+//				
+//				Path dstPathx = new Path(outputPath+""); 
+//				hdfs = FileSystem.get(dstPathx.toUri(), conf);
+//				inputPath=inputPath+passes;
+//				hdfs.rename(dstPathx, new Path(inputPath));
+//				outputPath += passes;
+//				
+//				Utils.log("    new input path is:"+inputPath+" New output path is :"+outputPath);				
+//			}
+//			catch(IOException e){
+//				Utils.log("Error while swaping input output.");
+//				e.printStackTrace();
+//			}
+//			/* === END Page Rank Itr i === */
+//		}
+//		fsdos.close();
+//		Utils.log("DONE");
 
 
 	}

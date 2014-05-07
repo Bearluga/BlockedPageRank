@@ -6,6 +6,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 
+
+import Utils.Counter;
 //Text, IntWritable, Text, IntWritable
 import Utils.Utils;
 

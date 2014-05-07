@@ -60,7 +60,9 @@ public class Utils {
     return n;
   }
 
-  private final static long[] blocks = {10328,
+  private final static long[] blocks = {
+      0,
+      10328,
       20373,
       30629,
       40645,
@@ -127,11 +129,34 @@ public class Utils {
       655804,
       665666,
       675448,
-      685230};
+      685230 //very end
+      };
 
   public static long blockIDofNode(long nodeID){
     int low = 0;
-    int high = blocks.length;
+    int high = blocks.length-1;
+    
+    while(low<= high){
+      int m = (low+high)>>1;
+      if(blocks[m] == nodeID){
+        return m;
+      }else if(blocks[m] < nodeID){
+        if(nodeID < blocks[m+1]){
+          //  blocks[m] < nodeID < blocks[m+1]
+          return m;
+        }else{
+          low = m+1;
+        }
+      }else{
+        if(blocks[m-1] <= nodeID){
+          // blocks[m-1] <= node < blocks[m]
+          return m-1;
+        }else{
+          high = m-1;
+        }
+      }
+    }
+    
     
     return 0;
   }
